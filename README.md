@@ -60,62 +60,70 @@ cd ~/projects/toggle-display
 
 ### 2. Capture your display layouts
 
-You need to record the `displayplacer` command for each layout.
+Arrange your screens in **System Settings → Displays**, then save the arrangement
+under a name:
 
-**For a side-by-side layout (A / C):**
-1. Go to **System Settings → Displays** and drag your screens into the side-by-side arrangement
-2. Run the following in your terminal:
 ```sh
-displayplacer list
-```
-3. Copy the last line of the output — it starts with `displayplacer "id:..."`
+# Side-by-side arrangement
+./toggle-display.sh --save A
 
-**For a vertical layout (B / D — laptop under monitor):**
-1. Go back to **System Settings → Displays** and drag the laptop screen below the monitor
-2. Run `displayplacer list` again and copy the last line
-
-### 3. Update the toggle script
-
-Edit `~/projects/toggle-display/toggle-display.sh`:
-```sh
-nvim ~/projects/toggle-display/toggle-display.sh
+# Then drag the laptop below the monitor and save the second one
+./toggle-display.sh --save B
 ```
 
-Set the layout templates to the commands you copied above, replacing the **external monitor's** id with the literal placeholder `EXTERNAL_ID` (the script substitutes the connected monitor's real id at runtime):
+`--save` writes to `~/.config/toggle-display/layouts.conf`, swapping the connected
+screen ids out for placeholders so the layout keeps working after macOS reshuffles
+ids. Saving under an existing name (`A`–`D`) overrides that built-in layout.
+
+`A`/`B` are the HP layouts, `C`/`D` the Dell ones.
+
+### 3. Register your monitor IDs
+
+macOS assigns each screen several ids. The script accepts **any** known id per
+monitor, so it keeps working when one of them changes:
+
 ```sh
-LAYOUT_A_TEMPLATE='displayplacer "id:EXTERNAL_ID res:2560x1440 hz:60 color_depth:8 scaling:on origin:(0,0) degree:0" "id:YYYY res:1800x1169 scaling:on origin:(2560,0) degree:0"'
-LAYOUT_B_TEMPLATE='displayplacer "id:EXTERNAL_ID res:2560x1440 hz:60 color_depth:8 scaling:on origin:(0,0) degree:0" "id:YYYY res:1800x1169 scaling:on origin:(380,1440) degree:0"'
-```
-
-`A`/`B` are the HP layouts, `C`/`D` the Dell ones. `YYYY` is your laptop's own screen id, which stays hardcoded.
-
-### 4. Register your monitor IDs
-
-macOS assigns each monitor a persistent id, and it changes when you swap monitors or move to a different port. The script matches whichever known id is currently connected, so you only need to add the new id — the layouts themselves need no edits.
-
-Run `displayplacer list`, copy the `Persistent screen id:` of your external monitor, and add it to the matching array at the top of the script:
-```sh
-KNOWN_HP_IDS=(
-  "3C4D0074-0F3D-47DD-AECB-1B80731B9B3F"  # Current HP monitor
+HP_IDS=(
+  "s16843009"                             # serial id — survives port changes
+  "06821F68-21CC-4370-8CC0-BE95ACB3AC1C"  # persistent id — fallback
 )
-KNOWN_DELL_IDS=(
-  "4BBE0CEB-FD34-4B58-AA4B-B701217F35EA"  # Current Dell monitor (S2725DC)
+DELL_IDS=(
+  "s1093808706"                           # Dell S2725DC
+  "4BBE0CEB-FD34-4B58-AA4B-B701217F35EA"
 )
 ```
 
-If no id in the relevant array is connected, the script prints the connected ids and exits without touching your screens.
+Serial ids (`sNNNNN`) are tied to the display hardware, so they normally survive
+port changes and wake-order races — list them first. Persistent ids stay as
+fallbacks for monitors whose serial is a placeholder value.
+
+Run `displayplacer list` to see all three id forms for each connected screen. If
+no known id is connected, the script prints what it found and exits without
+touching your screens.
 
 ## Usage
 
 ### From the terminal
 
 ```sh
-# HP monitor (default) — toggles A <-> B
+# Detect the connected monitor and toggle its two layouts
 ~/projects/toggle-display/toggle-display.sh
 
-# Dell monitor — toggles C <-> D
-~/projects/toggle-display/toggle-display.sh DELL
+# Or name the monitor explicitly
+~/projects/toggle-display/toggle-display.sh HP     # toggles A <-> B
+~/projects/toggle-display/toggle-display.sh DELL   # toggles C <-> D
+
+# Apply one layout directly, without toggling
+~/projects/toggle-display/toggle-display.sh --apply C
+
+# Save the current arrangement
+~/projects/toggle-display/toggle-display.sh --save C
 ```
+
+The active layout is detected by reading the current arrangement rather than by
+remembering the last run, so the toggle stays correct after a reboot or after you
+rearrange screens by hand. An arrangement it doesn't recognise falls back to the
+first layout for that monitor.
 
 Or, to run it from anywhere, add an alias to your shell config (`~/.zshrc` or `~/.bashrc`):
 
@@ -129,8 +137,7 @@ source ~/.zshrc
 
 Then just type:
 ```sh
-toggle-display        # HP
-toggle-display DELL   # Dell
+toggle-display        # detects the connected monitor
 ```
 
 ---
@@ -140,11 +147,14 @@ toggle-display DELL   # Dell
 **`displayplacer: command not found`**
 Run `brew install displayplacer` and make sure Homebrew's bin is in your PATH.
 
-**`Error: No known HP/DELL monitor found`**
-The monitor's persistent id isn't registered. Copy the `Persistent screen id:` from the printed list and add it to `KNOWN_HP_IDS` or `KNOWN_DELL_IDS` at the top of the script.
+**`Error: no known HP/DELL monitor is connected`**
+None of the monitor's registered ids matched. Copy an id from the printed list and add it to `HP_IDS` or `DELL_IDS` at the top of the script — prefer the `Serial screen id:`.
 
 **Layout doesn't apply correctly after waking from sleep**
-This is a known macOS quirk where screen IDs can change. Re-run `displayplacer list` with both screens connected and add the new id to the relevant `KNOWN_*_IDS` array.
+This is a known macOS quirk where screen IDs can change. Adding the monitor's serial id to the relevant `*_IDS` array usually fixes it for good, since serial ids are tied to the display hardware rather than the port.
+
+**The toggle goes to the wrong layout**
+Shouldn't happen any more — the script reads the current arrangement instead of remembering the last run. If it does, two layouts probably share the same laptop origin, which is what the script uses to tell them apart. Check the `LAYOUT_*_ORIGIN` values are all distinct.
 
 **The script toggles but nothing changes visually**
 Make sure both screens are connected and awake before running the script. Check that the screen IDs in your commands match the output of `displayplacer list`.
@@ -156,6 +166,8 @@ Make sure both screens are connected and awake before running the script. Check 
 ```
 ~/projects/toggle-display/
 ├── README.md
+├── doc/
+│   └── hardening-plan.md
 └── toggle-display.sh
 ```
 

@@ -3,8 +3,8 @@
 Plan for making `toggle-display.sh` more robust and easier to live with, without
 adding dependencies or changing language.
 
-**Status:** proposed, not implemented. Written 2026-08-24, after adding the Dell
-C/D toggle.
+**Status:** implemented 2026-08-24. All three changes landed, plus two additions
+noted under "Deviations from the plan" at the end.
 
 ---
 
@@ -204,10 +204,32 @@ sourced config, writing profiles in bash is about four lines (see Change 3).
 
 ---
 
+## Deviations from the plan
+
+Two things were added during implementation that the plan didn't call for:
+
+- **Monitor auto-detection.** Running with no argument now detects which monitor
+  is connected instead of defaulting to `HP`. `detect_display_type` was needed for
+  `--save` anyway, so wiring it to the default argument was one extra line. Revert
+  by restoring `DISPLAY_TYPE="${1:-HP}"` if the old default is preferred.
+- **`--apply NAME` and `--help`.** `--save` alone was a half-feature: it could
+  store a layout under an arbitrary name but nothing could reach it. `--apply`
+  closes that loop, and `--help` earns its place once flags exist.
+
+The `--save` placeholder substitution also turned out to need more care than the
+sketch above. `displayplacer list` always prints *persistent* ids in its final
+line, which is not necessarily the id form the script matched on — so `--save`
+replaces every known id for a screen, not just the resolved one.
+
+---
+
 ## Open questions
 
 - Is `3C4D0074-…` still in use? Its serial id needs capturing while connected —
   and confirming it doesn't collide with the HP's `s16843009`.
 - Are the "Old HP monitor" / "Current HP monitor" comments still accurate? The
-  connected HP on 2026-08-24 was the one labelled "Old".
+  connected HP on 2026-08-24 was the one labelled "Old". The comments were dropped
+  during implementation rather than corrected, since they couldn't be verified.
 - Should the old Dell (`0E27842A-…`) stay as a fallback, or be dropped?
+- The Dell layouts (C/D) are still untested against the new script — the Dell was
+  unplugged when this landed. The HP path (A/B) is verified.
