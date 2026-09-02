@@ -114,3 +114,9 @@ Parser fixtures are checked in under `testdata/displayplacer`. Domain logic is
 split into `internal/config`, `internal/displayplacer`, `internal/profile`, and
 `internal/migration` so tests can inject displayplacer output and an apply
 runner without physical monitors.
+
+## Roadmap
+
+See [`doc/next-features.md`](doc/next-features.md) for prioritized improvements
+and [`doc/shell-completion-plan.md`](doc/shell-completion-plan.md) for the
+completion design.
