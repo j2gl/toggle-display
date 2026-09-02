@@ -3,8 +3,10 @@
 Plan for making `toggle-display.sh` more robust and easier to live with, without
 adding dependencies or changing language.
 
-**Status:** implemented 2026-08-24. All three changes landed, plus two additions
-noted under "Deviations from the plan" at the end.
+**Status:** historical Bash hardening work, implemented 2026-08-24. The
+[Go migration plan](go-migration-plan.md) now supersedes the Bash implementation;
+`toggle-display.sh` is retained as a compatibility wrapper and `README.md`
+documents the current commands and JSON configuration.
 
 ---
 
@@ -179,12 +181,13 @@ it is now. Change 3 is about an hour and is where scope starts to grow.
 
 ---
 
-## Considered and rejected: porting to Go
+## Historical note: porting to Go
 
-Rejected for now. A Go version would still shell out to `displayplacer`, so every
-failure mode above stays identical — the churn, the stale state, the hardcoded
-layouts are configuration and design problems, not language problems. The trade
-would be a build step and a binary to distribute in exchange for nicer internals.
+This section records the original decision to defer a Go port. The decision was
+later revisited as the profile model grew; see `doc/go-migration-plan.md`. The
+current implementation uses Go for typed JSON configuration, parser fixtures,
+and injectable layout logic while continuing to use `displayplacer` for the
+actual macOS display operation.
 
 Go earns its keep only if:
 

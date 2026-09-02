@@ -1,0 +1,27 @@
+# Go build output
+/toggle-display
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test and coverage artifacts
+*.test
+*.out
+coverage.html
+
+# Go workspace files are machine-specific for this project
+go.work
+go.work.sum
+
+# macOS
+.DS_Store
+
+# Editors and temporary files
+.idea/
+.vscode/
+*.swp
+*.tmp
