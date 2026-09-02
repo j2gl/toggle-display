@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"toggle-display/internal/config"
 	"toggle-display/internal/displayplacer"
+	"toggle-display/internal/identity"
 )
 
 type fakeRunner struct {
@@ -67,6 +69,62 @@ func TestSaveAndAutomaticToggle(t *testing.T) {
 	}
 	if strings.Contains(strings.Join(fake.applied, " "), "EXTERNAL_ID") || strings.Contains(strings.Join(fake.applied, " "), "LAPTOP_ID") {
 		t.Fatal("role placeholders reached the runner")
+	}
+}
+
+func TestCompletionEndpointsAreReadOnlyAndScoped(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	base := config.Default()
+	base.Profiles = []config.Profile{
+		{ID: "zeta", MonitorIDs: []identity.Identifier{{Type: identity.Persistent, Value: "zeta-monitor"}}, LayoutOrder: []string{"z", "a"}, Layouts: []config.Layout{
+			{ID: "z", Name: "Z", LaptopOrigin: "(0,0)", DisplayplacerArgs: []string{"id:EXTERNAL_ID", "id:LAPTOP_ID"}},
+			{ID: "a", Name: "A", LaptopOrigin: "(1,1)", DisplayplacerArgs: []string{"id:EXTERNAL_ID", "id:LAPTOP_ID"}},
+		}},
+		{ID: "alpha", MonitorIDs: []identity.Identifier{{Type: identity.Persistent, Value: "alpha-monitor"}}, LayoutOrder: []string{"one"}, Layouts: []config.Layout{
+			{ID: "one", Name: "One", LaptopOrigin: "(2,2)", DisplayplacerArgs: []string{"id:EXTERNAL_ID", "id:LAPTOP_ID"}},
+		}},
+	}
+	if err := config.Save(path, base); err != nil {
+		t.Fatal(err)
+	}
+	fake := &fakeRunner{}
+	var out, errOut bytes.Buffer
+	if status := run([]string{"--complete", "profiles", "--config", path}, &out, &errOut, fake, "", ""); status != 0 {
+		t.Fatalf("profile completion failed: %d %s", status, errOut.String())
+	}
+	if out.String() != "alpha\nzeta\n" || fake.listCalls != 0 {
+		t.Fatalf("unexpected profiles or display query: %q calls=%d", out.String(), fake.listCalls)
+	}
+	out.Reset()
+	if status := run([]string{"--complete", "layouts", "--profile", "zeta", "--config", path}, &out, &errOut, fake, "", ""); status != 0 || out.String() != "a\nz\n" || fake.listCalls != 0 {
+		t.Fatalf("unexpected scoped layouts: status=%d out=%q calls=%d", status, out.String(), fake.listCalls)
+	}
+	out.Reset()
+	errOut.Reset()
+	missing := filepath.Join(t.TempDir(), "missing.json")
+	if status := run([]string{"--complete", "profiles", "--config", missing}, &out, &errOut, fake, "", ""); status == 0 || out.Len() != 0 || !strings.Contains(errOut.String(), "no completion candidates") || fake.listCalls != 0 {
+		t.Fatalf("missing config was not handled safely: status=%d out=%q err=%q", status, out.String(), errOut.String())
+	}
+}
+
+func TestCompletionScriptAndUnsupportedShell(t *testing.T) {
+	fake := &fakeRunner{}
+	var out, errOut bytes.Buffer
+	if status := run([]string{"--completion", "zsh"}, &out, &errOut, fake, "", ""); status != 0 {
+		t.Fatalf("zsh completion failed: %d %s", status, errOut.String())
+	}
+	for _, fragment := range []string{"#compdef toggle-display", "_arguments", "_describe", "--complete"} {
+		if !strings.Contains(out.String(), fragment) {
+			t.Fatalf("completion script lacks %q", fragment)
+		}
+	}
+	if fake.listCalls != 0 {
+		t.Fatal("completion generation queried displayplacer")
+	}
+	out.Reset()
+	errOut.Reset()
+	if status := run([]string{"--completion", "bash"}, &out, &errOut, fake, "", ""); status == 0 || !strings.Contains(errOut.String(), "unsupported completion shell") || fake.listCalls != 0 {
+		t.Fatalf("unsupported shell was not rejected: status=%d out=%q err=%q", status, out.String(), errOut.String())
 	}
 }
 

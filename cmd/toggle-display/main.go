@@ -7,8 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
+	"toggle-display/internal/completion"
 	"toggle-display/internal/config"
 	"toggle-display/internal/displayplacer"
 	"toggle-display/internal/identity"
@@ -47,6 +49,8 @@ func run(args []string, stdout, stderr io.Writer, runner displayplacer.Runner, d
 	force := fs.Bool("force", false, "allow --migrate to replace an existing JSON config")
 	configPath := fs.String("config", defaultConfigPath, "configuration file path")
 	legacyPath := fs.String("legacy-config", defaultLegacyPath, "old layouts.conf path for --migrate")
+	completionShell := fs.String("completion", "", "generate shell completion")
+	completeKind := fs.String("complete", "", "print completion candidates (profiles or layouts)")
 	help := fs.Bool("help", false, "show this help")
 	shortHelp := fs.Bool("h", false, "show this help")
 
@@ -73,6 +77,31 @@ func run(args []string, stdout, stderr io.Writer, runner displayplacer.Runner, d
 	}
 	if resolvedLegacy == "" {
 		resolvedLegacy = filepath.Join(filepath.Dir(resolvedConfig), "layouts.conf")
+	}
+
+	if *completionShell != "" && *completeKind != "" {
+		fmt.Fprintln(stderr, "Error: --completion and --complete cannot be used together")
+		return 2
+	}
+	if *completionShell != "" {
+		if *list || *saveID != "" || *applyID != "" || *profileID != "" || len(tags) != 0 || *migrate || *force || *name != "" || *description != "" {
+			fmt.Fprintln(stderr, "Error: --completion cannot be combined with an action")
+			return 2
+		}
+		script, err := completion.Generate(*completionShell)
+		if err != nil {
+			fmt.Fprintf(stderr, "Error: %v\n", err)
+			return 2
+		}
+		fmt.Fprint(stdout, script)
+		return 0
+	}
+	if *completeKind != "" {
+		if *list || *saveID != "" || *applyID != "" || len(tags) != 0 || *migrate || *force || *name != "" || *description != "" {
+			fmt.Fprintln(stderr, "Error: --complete cannot be combined with an action")
+			return 2
+		}
+		return completeCandidates(stdout, stderr, resolvedConfig, *completeKind, *profileID)
 	}
 
 	if *migrate {
@@ -213,6 +242,8 @@ Options:
   --force                    replace config when used with --migrate
   --config PATH              use an alternate config.json
   --legacy-config PATH       old layouts.conf path for --migrate
+  --completion SHELL         print shell completion script (zsh)
+  --complete KIND            print completion data (profiles or layouts)
   -h, --help                 show this help`)
 }
 
@@ -222,6 +253,56 @@ func configPathFromEnvironment() string {
 		home = "."
 	}
 	return config.ConfigPath(home, os.Getenv("XDG_CONFIG_HOME"))
+}
+
+func completeCandidates(stdout, stderr io.Writer, path, kind, requestedProfile string) int {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		fmt.Fprintf(stderr, "Error: config %s does not exist; no completion candidates are available\n", path)
+		return 1
+	} else if err != nil {
+		fmt.Fprintf(stderr, "Error: inspect config %s: %v\n", path, err)
+		return 1
+	}
+	c, err := config.Load(path)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error: %v\n", err)
+		return 1
+	}
+	switch strings.ToLower(kind) {
+	case "profiles":
+		profiles := config.SortedProfiles(c.Profiles)
+		for _, p := range profiles {
+			fmt.Fprintln(stdout, p.ID)
+		}
+		return 0
+	case "layouts":
+		if requestedProfile == "" {
+			fmt.Fprintln(stderr, "Error: --complete layouts requires --profile NAME")
+			return 2
+		}
+		p, err := config.FindProfile(&c, requestedProfile)
+		if err != nil {
+			fmt.Fprintf(stderr, "Error: %v\n", err)
+			return 1
+		}
+		ids := make([]string, 0, len(p.Layouts))
+		for _, layout := range p.Layouts {
+			ids = append(ids, layout.ID)
+		}
+		sort.SliceStable(ids, func(i, j int) bool {
+			if strings.EqualFold(ids[i], ids[j]) {
+				return ids[i] < ids[j]
+			}
+			return strings.ToLower(ids[i]) < strings.ToLower(ids[j])
+		})
+		for _, id := range ids {
+			fmt.Fprintln(stdout, id)
+		}
+		return 0
+	default:
+		fmt.Fprintf(stderr, "Error: unsupported completion kind %q (use profiles or layouts)\n", kind)
+		return 2
+	}
 }
 
 func chooseProfile(c config.Config, requested string, external displayplacer.Display) (config.Profile, error) {

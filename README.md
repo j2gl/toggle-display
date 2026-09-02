@@ -103,6 +103,21 @@ Migration is conservative: it will not replace an existing JSON file unless
 of an overwritten JSON config). The imported A-D layouts remain available as a
 compatibility aid; new profiles can use ids such as `layout1`.
 
+## Shell completion
+
+Generate the zsh completion file and load it before `compinit`:
+
+```sh
+make install-completion
+# Add this to ~/.zshrc before compinit:
+fpath=(~/.zfunc $fpath)
+autoload -Uz compinit && compinit
+```
+
+Completion reads profile and layout ids from JSON through a read-only endpoint;
+it does not run `displayplacer` or change displays. Use `--config PATH` when
+completion data should come from a non-default configuration.
+
 ## Development
 
 ```sh
@@ -114,3 +129,9 @@ Parser fixtures are checked in under `testdata/displayplacer`. Domain logic is
 split into `internal/config`, `internal/displayplacer`, `internal/profile`, and
 `internal/migration` so tests can inject displayplacer output and an apply
 runner without physical monitors.
+
+## Roadmap
+
+See [`doc/next-features.md`](doc/next-features.md) for prioritized improvements
+and [`doc/shell-completion-plan.md`](doc/shell-completion-plan.md) for the
+completion design.
