@@ -1,22 +1,19 @@
 # Next Features
 
 This document tracks the next improvements after the Go migration. The current
-implementation already supports profile-aware toggling, JSON configuration,
-parser fixtures, migration, and shell-wrapper compatibility.
+implementation supports profile-aware toggling, JSON configuration, parser
+fixtures, migration, shell-wrapper compatibility, and zsh completion.
 
 ## Priorities
 
-### 1. Shell completion
+### 1. Shell completion — zsh phase complete
 
-Add context-aware completion for the installed `toggle-display` command:
+The zsh generator and read-only completion endpoints are implemented. Profile
+ids complete after `--profile`, and layout ids complete after `--apply` and
+`--save`. Bash and Fish generators remain optional follow-up work.
 
-- profile ids after `--profile`;
-- layout ids after `--apply` and `--save`;
-- supported options and their values;
-- zsh first, followed by Bash and Fish if useful.
-
-Completion must read configuration only. It must not invoke `displayplacer list`
-or change displays. See [shell-completion-plan.md](shell-completion-plan.md).
+Completion reads configuration only. It does not invoke `displayplacer list` or
+change displays. See [shell-completion-plan.md](shell-completion-plan.md).
 
 ### 2. `--doctor` diagnostics
 
@@ -86,12 +83,11 @@ monitors are present.
 
 ## Suggested sequence
 
-1. Shell completion.
-2. `--doctor` and read-only validation.
-3. Monitor rebinding.
-4. Stronger fingerprints and wake retries.
-5. Configuration maintenance.
-6. Multiple-monitor support.
+1. `--doctor` and read-only validation.
+2. Monitor rebinding.
+3. Stronger fingerprints and wake retries.
+4. Configuration maintenance.
+5. Multiple-monitor support.
 
 Each feature should keep the no-argument workflow safe: no guessing, no shell
 evaluation, and no success message before a display change succeeds.

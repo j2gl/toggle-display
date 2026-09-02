@@ -1,5 +1,8 @@
 # Shell Completion Plan
 
+**Status:** zsh completion and read-only profile/layout endpoints implemented;
+Bash and Fish generators remain future work.
+
 ## Objective
 
 Provide fast, context-aware completion for `toggle-display` without querying or
