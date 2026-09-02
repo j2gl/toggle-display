@@ -73,7 +73,11 @@ under a name:
 
 `--save` writes to `~/.config/toggle-display/layouts.conf`, swapping the connected
 screen ids out for placeholders so the layout keeps working after macOS reshuffles
-ids. Saving under an existing name (`A`–`D`) overrides that built-in layout.
+ids. Saved layouts are associated with the currently connected physical monitor,
+so different HP monitors can each have their own `A`/`B` pair. Layout names may
+contain letters, numbers, and underscores, but cannot start with a number. Saving
+under an existing name (`A`–`D`) overrides that layout for the current monitor;
+monitors without an override use the built-in layout.
 
 `A`/`B` are the HP layouts, `C`/`D` the Dell ones.
 
@@ -86,6 +90,7 @@ monitor, so it keeps working when one of them changes:
 HP_IDS=(
   "s16843009"                             # serial id — survives port changes
   "06821F68-21CC-4370-8CC0-BE95ACB3AC1C"  # persistent id — fallback
+  "6F9FB1D9-2284-44F6-8357-9B84666EEBD5"  # persistent id currently reported by macOS
 )
 DELL_IDS=(
   "s1093808706"                           # Dell S2725DC
@@ -116,14 +121,20 @@ touching your screens.
 # Apply one layout directly, without toggling
 ~/projects/toggle-display/toggle-display.sh --apply C
 
-# Save the current arrangement
+# Save the current arrangement for the connected monitor
 ~/projects/toggle-display/toggle-display.sh --save C
+
+# Save two layouts for a new HP monitor; these override A/B only for that monitor
+~/projects/toggle-display/toggle-display.sh HP --save A
+# Rearrange the displays to the second preferred position, then:
+~/projects/toggle-display/toggle-display.sh HP --save B
 ```
 
 The active layout is detected by reading the current arrangement rather than by
 remembering the last run, so the toggle stays correct after a reboot or after you
-rearrange screens by hand. An arrangement it doesn't recognise falls back to the
-first layout for that monitor.
+rearrange screens by hand. The connected monitor's persistent id selects any
+monitor-specific saved layouts automatically. An arrangement it doesn't recognise
+falls back to the first layout for that monitor.
 
 Or, to run it from anywhere, add an alias to your shell config (`~/.zshrc` or `~/.bashrc`):
 

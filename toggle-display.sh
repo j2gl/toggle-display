@@ -15,6 +15,7 @@ HP_IDS=(
   "s16843009"                             # HP 28" — placeholder EDID serial (0x01010101)
   "06821F68-21CC-4370-8CC0-BE95ACB3AC1C"
   "3C4D0074-0F3D-47DD-AECB-1B80731B9B3F"
+  "6F9FB1D9-2284-44F6-8357-9B84666EEBD5"  # currently reported by displayplacer
 )
 DELL_IDS=(
   "s1093808706"                           # Dell S2725DC
@@ -48,7 +49,8 @@ DELL_LAYOUTS="C D"
 
 # --- User config ---------------------------------------------------------------
 # Sourced after the defaults above, so it can override any layout or id list, and
-# holds anything written by --save.
+# holds anything written by --save. Saved layouts are scoped to the connected
+# monitor; global layout variables remain valid as fallbacks.
 CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/toggle-display/layouts.conf"
 [ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE"
 
@@ -60,9 +62,9 @@ Usage: $(basename "$0") [HP|DELL] [--save NAME] [--apply NAME] [--help]
   HP               Toggle the HP layouts   ($HP_LAYOUTS)
   DELL             Toggle the Dell layouts ($DELL_LAYOUTS)
   --apply NAME     Apply a named layout directly
-  --save NAME      Save the current arrangement as NAME into
+  --save NAME      Save the current arrangement as NAME for this monitor into
                    $CONFIG_FILE
-                   Saving as an existing name (A-D) overrides that layout.
+                   Saving A-D creates a monitor-specific override.
   --help           Show this message
 
 The active layout is detected by reading the current arrangement, so the toggle
@@ -99,6 +101,18 @@ current_origin() {
     '
 }
 
+# Resolve any known id to the screen's persistent id. This gives saved layouts a
+# stable per-monitor key even when the serial id is the one that matched.
+current_persistent_id() {
+    printf '%s\n' "$DISPLAY_LIST" | awk -v id="$1" '
+        /^Persistent screen id:/ {
+            persistent=$4
+            if ($4 == id) { print persistent; exit }
+        }
+        /^Serial screen id:/ && $4 == id { print persistent; exit }
+    '
+}
+
 # Copy a monitor type's id list into TYPE_IDS (bash 3.2 has no namerefs).
 set_type_ids() {
     case "$1" in
@@ -126,17 +140,30 @@ apply_layout() {
     local name="$1"
     local template_var="LAYOUT_${name}_TEMPLATE"
     local desc_var="LAYOUT_${name}_DESC"
-    local template="${!template_var}"
+    local monitor_template_var="LAYOUT_${name}_MONITOR_${MONITOR_PROFILE_KEY}_TEMPLATE"
+    local monitor_desc_var="LAYOUT_${name}_MONITOR_${MONITOR_PROFILE_KEY}_DESC"
+    local template="${!monitor_template_var}"
+    local desc="${!monitor_desc_var}"
+
+    # Prefer a profile saved for this physical monitor, while retaining the
+    # built-in/global layout as a fallback for monitors without one.
+    if [ -z "$template" ]; then
+        template="${!template_var}"
+        desc="${!desc_var}"
+    fi
 
     if [ -z "$template" ]; then
         echo "Error: unknown layout '$name'." >&2
-        exit 1
+        return 1
     fi
 
     template="${template//EXTERNAL_ID/$EXTERNAL_ID}"
     template="${template//LAPTOP_ID/$LAPTOP_ID}"
-    eval "$template"
-    echo "Switched to ${!desc_var:-layout $name}"
+    if ! eval "$template"; then
+        echo "Error: failed to apply layout '$name'." >&2
+        return 1
+    fi
+    echo "Switched to ${desc:-layout $name}"
 }
 
 # Apply the secondary layout if the primary one is currently active, else the
@@ -144,8 +171,14 @@ apply_layout() {
 toggle_layouts() {
     local primary="$1" secondary="$2"
     local origin_var="LAYOUT_${primary}_ORIGIN"
+    local monitor_origin_var="LAYOUT_${primary}_MONITOR_${MONITOR_PROFILE_KEY}_ORIGIN"
+    local origin="${!monitor_origin_var}"
 
-    if [ "$(current_origin "$LAPTOP_ID")" = "${!origin_var}" ]; then
+    if [ -z "$origin" ]; then
+        origin="${!origin_var}"
+    fi
+
+    if [ "$(current_origin "$LAPTOP_ID")" = "$origin" ]; then
         apply_layout "$secondary"
     else
         apply_layout "$primary"
@@ -173,12 +206,13 @@ save_layout() {
     mkdir -p "$(dirname "$CONFIG_FILE")"
     {
         echo ""
-        echo "LAYOUT_${name}_TEMPLATE='${command}'"
-        echo "LAYOUT_${name}_ORIGIN='${origin}'"
-        echo "LAYOUT_${name}_DESC='layout ${name} (saved)'"
+        echo "# ${DISPLAY_TYPE} monitor persistent id: ${MONITOR_PROFILE_ID}"
+        echo "LAYOUT_${name}_MONITOR_${MONITOR_PROFILE_KEY}_TEMPLATE='${command}'"
+        echo "LAYOUT_${name}_MONITOR_${MONITOR_PROFILE_KEY}_ORIGIN='${origin}'"
+        echo "LAYOUT_${name}_MONITOR_${MONITOR_PROFILE_KEY}_DESC='layout ${name} (saved for ${DISPLAY_TYPE} monitor)'"
     } >> "$CONFIG_FILE"
 
-    echo "Saved current arrangement as layout $name in:"
+    echo "Saved layout $name for $DISPLAY_TYPE monitor $MONITOR_PROFILE_ID in:"
     echo "  $CONFIG_FILE"
 }
 
@@ -221,6 +255,16 @@ if [ "$ACTION" != "toggle" ] && [ -z "$LAYOUT_NAME" ]; then
     exit 1
 fi
 
+# Layout names become part of variable names in the sourced config file.
+if [ "$ACTION" != "toggle" ]; then
+    case "$LAYOUT_NAME" in
+        ''|[0-9]*|*[!a-zA-Z0-9_]*)
+            echo "Error: invalid layout name '$LAYOUT_NAME'. Use letters, numbers, and underscores; do not start with a number." >&2
+            exit 1
+            ;;
+    esac
+fi
+
 # --- Resolve the connected screens ---------------------------------------------
 if [ -z "$DISPLAY_TYPE" ]; then
     DISPLAY_TYPE=$(detect_display_type)
@@ -251,6 +295,12 @@ if [ -z "$LAPTOP_ID" ]; then
     echo "Add its id to LAPTOP_IDS at the top of this script." >&2
     exit 1
 fi
+
+# Use the persistent id as the profile key. Replace non-identifier characters so
+# the key can safely be used in a sourced bash config variable name.
+MONITOR_PROFILE_ID=$(current_persistent_id "$EXTERNAL_ID")
+MONITOR_PROFILE_ID="${MONITOR_PROFILE_ID:-$EXTERNAL_ID}"
+MONITOR_PROFILE_KEY="${MONITOR_PROFILE_ID//[^a-zA-Z0-9_]/_}"
 
 # --- Run -----------------------------------------------------------------------
 case "$ACTION" in
