@@ -1,5 +1,10 @@
 # toggle-display: Profile and Layout Design
 
+> Implementation note: the Go migration adopts the versioned JSON format in
+> `doc/go-migration-plan.md` at `~/.config/toggle-display/config.json`. The
+> directory/INI layout below is the original design sketch and is retained for
+> its domain vocabulary; use the Go CLI and README for current storage details.
+
 ## Goal
 
 Make the configuration match the way displays are used:
@@ -136,36 +141,40 @@ opening the config files.
 
 ## Storage design
 
-Use a directory per profile rather than constructing Bash variable names from
-user input:
+The implementation stores one versioned JSON document rather than constructing
+Bash variable names from user input:
 
 ```text
-~/.config/toggle-display/
-└── profiles/
-    └── hp_home/
-        ├── profile.conf
-        └── layouts/
-            ├── layout1.conf
-            └── layout2.conf
+~/.config/toggle-display/config.json
 ```
 
-`profile.conf` contains the friendly metadata and monitor identifiers:
+Its essential shape is:
 
-```ini
-profile_id=hp_home
-place=home
-monitor_name=HP 27f 4k
-persistent_id=...
-serial_id=...
+```json
+{
+  "version": 1,
+  "laptop_ids": [{"type": "serial", "value": "s4251086178"}],
+  "profiles": [{
+    "id": "hp_home",
+    "tags": {"place": "home"},
+    "monitor_ids": [{"type": "persistent", "value": "..."}],
+    "layout_order": ["layout1", "layout2"],
+    "layouts": [{
+      "id": "layout1",
+      "name": "next-to-laptop",
+      "description": "External monitor on the left",
+      "laptop_origin": "(2560,458)",
+      "displayplacer_args": ["id:EXTERNAL_ID ...", "id:LAPTOP_ID ..."]
+    }]
+  }]
+}
 ```
 
-Each layout file contains its id, display metadata, discriminator origin, and
-captured `displayplacer` arrangement. The exact command should be treated as
-configuration data, not sourced as arbitrary shell code. Profile and layout ids
-must be validated; friendly names, tags, and descriptions may contain spaces.
-
-The layout order should be explicit in `profile.conf` (for example,
-`layouts=layout1 layout2`) rather than inferred from filesystem ordering.
+Each displayplacer screen specification is an argument, not an executable
+string. `LAPTOP_ID` and `EXTERNAL_ID` are substituted in memory and passed
+without a shell. Profile/layout ids are validated; friendly names, tags, and
+descriptions may contain spaces and punctuation. The layout order is explicit
+and never inferred from filesystem ordering. Writes are atomic.
 
 ## Matching and safety rules
 
