@@ -176,7 +176,6 @@ Create a parser that converts the command output into typed display records:
 
 - persistent screen id;
 - serial screen id;
-- contextual id when available;
 - display type/name;
 - resolution, refresh rate, color depth, scaling;
 - origin and rotation;
@@ -292,7 +291,7 @@ requiring physical monitors.
 
 ### Unit tests
 
-- Parse persistent, serial, contextual, origin, mode, scaling, rotation, and
+- Parse persistent, serial, origin, mode, scaling, rotation, and
   enabled fields.
 - Parse the final displayplacer arrangement command.
 - Normalize screen ids into laptop/external roles.

@@ -186,7 +186,7 @@ func validateLayouts(p Profile) error {
 func validateIdentifiers(label string, ids []identity.Identifier) error {
 	seen := make(map[string]bool, len(ids))
 	for _, id := range ids {
-		if id.Type != identity.Serial && id.Type != identity.Persistent && id.Type != identity.Contextual {
+		if id.Type != identity.Serial && id.Type != identity.Persistent {
 			return fmt.Errorf("%s has unsupported identifier type %q", label, id.Type)
 		}
 		if strings.TrimSpace(id.Value) == "" {

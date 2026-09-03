@@ -1,5 +1,4 @@
 Persistent screen id: 6F9FB1D9-2284-44F6-8357-9B84666EEBD5
-Contextual screen id: 1
 Serial screen id: s0
 Type: 27 inch external screen
 Resolution: 2560x1440
@@ -13,7 +12,6 @@ Resolutions for rotation 0:
   mode 0: res:800x600 hz:60 color_depth:8 scaling:on
 
 Persistent screen id: 37D8832A-2D66-02CA-B9F7-8F30A301B230
-Contextual screen id: 2
 Serial screen id: s4251086178
 Type: Built-in Retina Display
 Resolution: 1512x982
