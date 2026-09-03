@@ -104,22 +104,20 @@ func sameDisplay(a, b displayplacer.Display) bool {
 }
 
 // MatchRank returns the priority of the best identifier match. Lower is
-// stronger: real serial, persistent, then contextual. Generic serial values
-// are ignored entirely.
+// stronger: real serial, then persistent. Generic serial values are ignored
+// entirely.
 func MatchRank(p config.Profile, monitor displayplacer.Display) (int, bool) {
 	best := 100
 	for _, registered := range p.MonitorIDs {
 		if !registered.Useful() || !monitor.HasIdentifier(registered) {
 			continue
 		}
-		rank := 3
+		rank := 100
 		switch registered.Type {
 		case identity.Serial:
 			rank = 0
 		case identity.Persistent:
 			rank = 1
-		case identity.Contextual:
-			rank = 2
 		}
 		if rank < best {
 			best = rank
@@ -151,7 +149,7 @@ func Candidates(profiles []config.Profile, monitor displayplacer.Display) []Cand
 }
 
 // Select chooses exactly one best profile. A strong serial match takes
-// precedence over weaker persistent/contextual matches; ties are refused.
+// precedence over weaker persistent matches; ties are refused.
 func Select(profiles []config.Profile, monitor displayplacer.Display) (config.Profile, error) {
 	candidates := Candidates(profiles, monitor)
 	if len(candidates) == 0 {
@@ -191,7 +189,7 @@ func ConnectedIDs(display displayplacer.Display) string {
 		}
 	}
 	if len(parts) == 0 {
-		return "no persistent, serial, or contextual ids reported"
+		return "no persistent or serial ids reported"
 	}
 	return strings.Join(parts, ", ")
 }
@@ -203,7 +201,6 @@ func CaptureMonitorIDs(display displayplacer.Display) ([]identity.Identifier, er
 	ids := identity.Ordered(
 		identity.Identifier{Type: identity.Serial, Value: display.SerialID},
 		identity.Identifier{Type: identity.Persistent, Value: display.PersistentID},
-		identity.Identifier{Type: identity.Contextual, Value: display.ContextualID},
 	)
 	if len(ids) == 0 {
 		return nil, errors.New("the external monitor reported no useful screen identifier; refusing to create an unmatchable profile")

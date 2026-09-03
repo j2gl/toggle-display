@@ -1,5 +1,4 @@
 Persistent screen id: 37D8832A-2D66-02CA-B9F7-8F30A301B230
-Contextual screen id: 2
 Serial screen id: s4251086178
 Type: Built-in Retina Display
 Resolution: 1512x982

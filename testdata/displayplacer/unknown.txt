@@ -1,5 +1,4 @@
 Persistent screen id: 11111111-2222-3333-4444-555555555555
-Contextual screen id: 9
 Serial screen id: s999999999
 Type: Unknown external display
 Resolution: 1920x1080
@@ -11,7 +10,6 @@ Rotation: 90
 Enabled: true
 
 Persistent screen id: 37D8832A-2D66-02CA-B9F7-8F30A301B230
-Contextual screen id: 10
 Serial screen id: s4251086178
 Type: Built-in Retina Display
 Resolution: 1512x982

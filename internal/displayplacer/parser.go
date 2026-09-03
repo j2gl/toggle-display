@@ -40,7 +40,6 @@ type ScreenSpec struct {
 type Display struct {
 	PersistentID string
 	SerialID     string
-	ContextualID string
 	Type         string
 	Name         string
 	Resolution   string
@@ -58,7 +57,6 @@ func (d Display) Identifiers() []identity.Identifier {
 	return identity.Ordered(
 		identity.Identifier{Type: identity.Serial, Value: d.SerialID},
 		identity.Identifier{Type: identity.Persistent, Value: d.PersistentID},
-		identity.Identifier{Type: identity.Contextual, Value: d.ContextualID},
 	)
 }
 
@@ -66,7 +64,6 @@ func (d Display) AllIdentifiers() []identity.Identifier {
 	return []identity.Identifier{
 		{Type: identity.Persistent, Value: d.PersistentID},
 		{Type: identity.Serial, Value: d.SerialID},
-		{Type: identity.Contextual, Value: d.ContextualID},
 	}
 }
 
@@ -88,9 +85,6 @@ func (d Display) PreferredID() string {
 	}
 	if d.PersistentID != "" {
 		return d.PersistentID
-	}
-	if d.ContextualID != "" {
-		return d.ContextualID
 	}
 	return d.SerialID
 }
@@ -147,8 +141,6 @@ func ParseList(output string) (Snapshot, error) {
 			flush()
 			value := strings.TrimSpace(line[strings.Index(line, ":")+1:])
 			current = &Display{PersistentID: firstWord(value)}
-		case current != nil && strings.HasPrefix(lower, "contextual screen id:"):
-			current.ContextualID = firstWord(afterColon(line))
 		case current != nil && strings.HasPrefix(lower, "serial screen id:"):
 			current.SerialID = firstWord(afterColon(line))
 		case current != nil && strings.HasPrefix(lower, "type:"):

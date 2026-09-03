@@ -1,5 +1,4 @@
 Persistent screen id: 4BBE0CEB-FD34-4B58-AA4B-B701217F35EA
-Contextual screen id: 7
 Serial screen id: s1093808706
 Type: Dell S2725DC
 Resolution: 2560x1440
@@ -13,7 +12,6 @@ Resolutions for rotation 0:
   mode 0: res:1920x1080 hz:60 color_depth:8
 
 Persistent screen id: 37D8832A-2D66-02CA-B9F7-8F30A301B230
-Contextual screen id: 8
 Serial screen id: s4251086178
 Type: MacBook built-in screen
 Resolution: 1512x982

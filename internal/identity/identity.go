@@ -13,7 +13,6 @@ type Type string
 const (
 	Persistent Type = "persistent"
 	Serial     Type = "serial"
-	Contextual Type = "contextual"
 )
 
 // Identifier is a displayplacer screen identifier.
@@ -63,7 +62,7 @@ func (i Identifier) Useful() bool {
 func Ordered(ids ...Identifier) []Identifier {
 	seen := make(map[string]bool)
 	result := make([]Identifier, 0, len(ids))
-	for _, preferredType := range []Type{Serial, Persistent, Contextual} {
+	for _, preferredType := range []Type{Serial, Persistent} {
 		for _, id := range ids {
 			if id.Type != preferredType || !id.Useful() || seen[id.Key()] {
 				continue
