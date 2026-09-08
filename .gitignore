@@ -1,3 +1,4 @@
+
 # Go build output
 /toggle-display
 /bin/
@@ -19,6 +20,9 @@ go.work.sum
 
 # macOS
 .DS_Store
+
+# Temporary files 
+temp/
 
 # Editors and temporary files
 .idea/
