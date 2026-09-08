@@ -50,7 +50,7 @@ The first save attaches the currently connected external monitor's known ids to
 the named profile. The profile is created automatically if it does not exist.
 
 ```sh
-./toggle-display.sh \
+toggle-display \
   --profile hp_home \
   --save layout1 \
   --name next-to-laptop \
@@ -67,7 +67,7 @@ placeholder serial such as `s0` must not be treated as a unique hardware id.
 Rearrange the displays, then save the second arrangement:
 
 ```sh
-./toggle-display.sh \
+toggle-display \
   --profile hp_home \
   --save layout2 \
   --name under-monitor \
@@ -82,7 +82,7 @@ used as the display name and the description is empty.
 ### Toggle a profile
 
 ```sh
-./toggle-display.sh --profile hp_home
+toggle-display --profile hp_home
 ```
 
 The script reads the current laptop origin, finds the matching layout, and
@@ -102,7 +102,7 @@ error explaining that another layout must be saved.
 ### Apply a specific layout
 
 ```sh
-./toggle-display.sh --profile hp_home --apply layout1
+toggle-display --profile hp_home --apply layout1
 ```
 
 The layout id is deliberately short; the friendly name and description are
@@ -114,7 +114,7 @@ With no explicit profile, the script finds the connected external monitor by
 matching its observed ids against registered profiles:
 
 ```sh
-./toggle-display.sh
+toggle-display
 ```
 
 If exactly one profile matches, it is toggled. The output includes the selected
@@ -131,8 +131,8 @@ for replacing a monitor or repairing ids.
 ### Inspect profiles
 
 ```sh
-./toggle-display.sh --list
-./toggle-display.sh --profile hp_home --list
+toggle-display --list
+toggle-display --profile hp_home --list
 ```
 
 The list should show profile ids, tags, matched monitor ids, and each layout's
@@ -215,9 +215,9 @@ connected monitor id -> monitor profile -> ordered layouts -> displayplacer comm
 Typical daily usage becomes:
 
 ```sh
-./toggle-display.sh                  # detect monitor and toggle its profile
-./toggle-display.sh --profile hp_home
-./toggle-display.sh --profile hp_home --apply layout1
+toggle-display                  # detect monitor and toggle its profile
+toggle-display --profile hp_home
+toggle-display --profile hp_home --apply layout1
 ```
 
 Setup is explicit once, but does not require manually copying screen ids or

@@ -2,7 +2,7 @@
 
 This document tracks the next improvements after the Go migration. The current
 implementation supports profile-aware toggling, JSON configuration, parser
-fixtures, migration, shell-wrapper compatibility, and zsh completion.
+fixtures, migration, and zsh completion.
 
 ## Priorities
 

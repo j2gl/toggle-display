@@ -1,12 +1,12 @@
 # Hardening Plan
 
-Plan for making `toggle-display.sh` more robust and easier to live with, without
-adding dependencies or changing language.
+Plan for making the original Bash implementation more robust and easier to
+live with, without adding dependencies or changing language.
 
 **Status:** historical Bash hardening work, implemented 2026-08-24. The
-[Go migration plan](go-migration-plan.md) now supersedes the Bash implementation;
-`toggle-display.sh` is retained as a compatibility wrapper and `README.md`
-documents the current commands and JSON configuration.
+[Go migration plan](go-migration-plan.md) supersedes the Bash implementation;
+the Bash entry point has been removed. `README.md` documents the current
+commands and JSON configuration.
 
 ---
 

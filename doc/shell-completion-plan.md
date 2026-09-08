@@ -134,8 +134,7 @@ should remain available for `--config` and `--legacy-config` values.
 - install the generated zsh function in a temporary zsh environment;
 - verify option, profile, and layout completion syntax;
 - verify both `--profile VALUE` and `--profile=VALUE` forms;
-- run ShellCheck on the generated script and the compatibility wrapper where
-  available.
+- run ShellCheck on the generated completion script where available.
 
 ### Manual acceptance
 

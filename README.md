@@ -20,10 +20,6 @@ make build                         # writes ./toggle-display
 make install                       # writes ~/.local/bin/toggle-display
 ```
 
-`toggle-display.sh` remains a compatible entry point. It runs a built binary
-beside the wrapper when one exists, and otherwise builds a short-lived Go
-binary, so existing aliases can continue to point at the script while developing.
-
 ## Daily use
 
 ```sh

@@ -258,12 +258,10 @@ Return the actual exit status. Only print a successful layout message after
    command or a small import helper that copies the current built-in layouts,
    known monitor ids, and valid saved layouts into `config.json`. Preserve the
    original Bash config as a backup.
-7. **Add a compatibility wrapper.** Keep `toggle-display.sh` as a small wrapper
-   that locates and executes the Go binary, so existing aliases continue to
-   work. A Makefile or documented `go build` command should install the binary
-   beside the wrapper or under `~/.local/bin`.
+7. **Install the Go command.** Use the Makefile or a documented `go build`
+   command to install the binary under `~/.local/bin`.
 8. **Switch the default entry point.** After manual verification on the HP home,
-   HP office, and Dell setups, make the wrapper invoke Go by default.
+   HP office, and Dell setups, make the Go command the default entry point.
 9. **Remove legacy behavior later.** Once the JSON profiles are confirmed,
    remove the hardcoded HP/DELL arrays, A-D terminology, sourced Bash config,
    and `eval` path. Keep a documented backup/import path for old users.
@@ -279,7 +277,6 @@ internal/displayplacer/parser.go
 internal/displayplacer/apply.go
 internal/profile/match.go
 internal/profile/toggle.go
-toggle-display.sh
 go.mod
 ```
 
@@ -337,4 +334,4 @@ The migration is complete when:
 - No saved configuration is executed through Bash `source` or `eval`.
 - A failed `displayplacer` call produces a non-zero exit status.
 - Parser, matcher, toggle, and config behavior are covered by automated tests.
-- The existing `toggle-display.sh` entry point remains usable.
+- The `toggle-display` command remains usable.
